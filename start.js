@@ -27,3 +27,6 @@ app.set('port', process.env.PORT || 7777);
 const server = app.listen(app.get('port'), () => {
   console.log(`Monty, Express is running on port ${server.address().port}`);
 });
+
+// TEMP Send Mail
+// require('./handlers/mail');

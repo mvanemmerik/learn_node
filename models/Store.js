@@ -35,7 +35,17 @@ const storeSchema = new mongoose.Schema({
     },
   },
   photo: String,
+  author: {
+    type: mongoose.Schema.ObjectId,
+    ref: 'User',
+    required: 'Something went wrong. Author id is missing.'
+  }
   });
+
+storeSchema.index({
+  name: 'text',
+  description: 'text'
+});
 
 storeSchema.pre('save', async function (next) {
   if (!this.isModified('name')) {

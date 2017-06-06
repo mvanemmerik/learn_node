@@ -44,6 +44,7 @@ exports.resize = async (req, res, next) => {
 }
 
 exports.createStore = async (req, res) => {
+  req.body.author = req.user.id;
   const store = await (new Store(req.body)).save();
   req.flash('success', `${store.name} created.`);
   res.redirect(`/store/${store.slug}`);
@@ -51,13 +52,19 @@ exports.createStore = async (req, res) => {
 
 exports.getStores = async (req, res) => {
   const stores = await Store.find();
-  console.log(stores);
   res.render('stores', { title: 'Stores', stores })
 }
 
+const confirmOwner = (store, user) => {
+  if (!store.author.equals(user.id)) {
+    throw Error('A store can only be editted by it\'s owner.');
+  }
+};
+
 exports.editStore = async (req, res) => {
-  const store = await Store.findOne({ _id: req.params.id })
-  res.render('editStore', { title: `Edit ${store.name}`, store })
+  const store = await Store.findOne({ _id: req.params.id });
+  confirmOwner(store, req.user);
+  res.render('editStore', { title: `Edit ${store.name}`, store });
 }
 
 exports.updateStore = async (req, res) => {
@@ -72,7 +79,7 @@ exports.updateStore = async (req, res) => {
   };
 
   exports.getStoreBySlug = async (req, res, next) => {
-    const store = await Store.findOne({ slug: req.params.slug });
+    const store = await Store.findOne({ slug: req.params.slug }).populate('author');
     if (!store) return next();
     res.render('store', { store, title: store.name });
   }
@@ -86,4 +93,12 @@ exports.updateStore = async (req, res) => {
 
     res.render('tag', { tags, tag, stores, title: 'Tags' });
   };
+
+  exports.searchStores = async (req, res) => {
+    const stores = await Store
+    .find({ $text: { $search: req.query.q } }, { score: { $meta: 'textScore' } })
+    .sort({ score: { $meta: 'textScore' } })
+    .limit(5);
+    res.json(stores);
+  }
 
